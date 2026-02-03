@@ -1,41 +1,38 @@
-from flask import Flask, request
+from flask import Flask, request, escape
 import os
 import hashlib
 
 app = Flask(__name__)
 
-# Clé secrète hardcodée (fausse)
-SECRET_KEY = "secret123"
+# Clé secrète depuis variable d’environnement
+SECRET_KEY = os.environ.get("SECRET_KEY", "change_me")
 
-# Hash faible (SHA1)
+# Hash sécurisé (SHA-256)
 def encrypt(data):
-    return hashlib.sha1(data.encode()).hexdigest()
+    return hashlib.sha256(data.encode()).hexdigest()
 
 @app.route("/create-ticket")
 def create_ticket():
-    title = request.args.get("title")
-    description = request.args.get("description")
+    title = request.args.get("title", "")
+    description = request.args.get("description", "")
 
-    # XSS (ما كاين حتى حماية)
-    return f"<h2>{title}</h2><p>{description}</p>"
+    # Protection contre le XSS
+    return f"<h2>{escape(title)}</h2><p>{escape(description)}</p>"
 
 @app.route("/execute")
 def execute():
-    cmd = request.args.get("cmd")
-
-    # Command Injection (CRITIQUE)
-    os.system(cmd)
-    return "Command executed"
+    # Fonction désactivée pour éviter l’injection de commandes
+    return "Forbidden", 403
 
 @app.route("/auth")
 def auth():
-    password = request.args.get("password")
+    password = request.args.get("password", "")
+    ADMIN_HASH = encrypt("admin123")
 
-    # Auth faible + mot de passe ثابت
-    if encrypt(password) == encrypt("admin"):
+    if encrypt(password) == ADMIN_HASH:
         return "Access granted"
-    return "Access denied"
+
+    return "Access denied", 401
 
 if __name__ == "__main__":
-    # Debug مفعّل (خطر)
-    app.run(debug=True)
+    app.run(debug=False)
