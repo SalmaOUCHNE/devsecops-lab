@@ -4,10 +4,10 @@ import hashlib
 
 app = Flask(__name__)
 
-# Clé secrète codée en dur (mauvaise pratique)
+#  Clé secrète codée en dur (mauvaise pratique)
 SECRET_KEY = "secret123"
 
-# Fonction de chiffrement faible (SHA1)
+#  Fonction de chiffrement faible (SHA1)
 def encrypt(data):
     return hashlib.sha1(data.encode()).hexdigest()
 
@@ -16,14 +16,14 @@ def create_ticket():
     title = request.args.get("title")
     description = request.args.get("description")
 
-    # Vulnérabilité XSS (aucune protection)
+    #  Vulnérabilité XSS (pas d’échappement)
     return f"<h2>{title}</h2><p>{description}</p>"
 
 @app.route("/execute")
 def execute():
     cmd = request.args.get("cmd")
 
-    # Injection de commande (très critique)
+    #  Injection de commande
     os.system(cmd)
     return "Command executed"
 
@@ -31,11 +31,12 @@ def execute():
 def auth():
     password = request.args.get("password")
 
-    # Authentification faible
+    #  Authentification faible
     if encrypt(password) == encrypt("admin"):
         return "Access granted"
+
     return "Access denied"
 
 if __name__ == "__main__":
-    # Debug activé (dangereux en production)
+    # ❌ Mode debug activé
     app.run(debug=True)
